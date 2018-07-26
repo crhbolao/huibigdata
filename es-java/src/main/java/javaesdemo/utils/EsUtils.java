@@ -2,21 +2,14 @@ package javaesdemo.utils;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
@@ -71,10 +64,10 @@ public class EsUtils {
      * es 根据某个字段查询数据
      */
     public void queryData() {
-        // 构建查询语句
+        // 构建查询语句:其中user_id为字段，2474310017为内容
         QueryBuilder queryBuilder = QueryBuilders.commonTermsQuery("USER_ID", "2474310017");
 
-        // 获取响应
+        // 获取响应： hui_test_post为es index. post_test为es type
         SearchResponse response = client.prepareSearch("hui_test_post")
                 .setTypes("post_test")
                 .setSearchType(SearchType.DFS_QUERY_AND_FETCH)
@@ -100,6 +93,8 @@ public class EsUtils {
      * 用来下载es中的数据
      */
     public void downloadData() {
+        //其中hui_test_post为es index . post_test为es type.
+        // 使用scroll可以模拟一个传统数据的游标，记录当前读取的文档信息位置。
         SearchResponse response = client.prepareSearch("hui_test_post").setTypes("post_test")
                 .setQuery(QueryBuilders.matchAllQuery()).setSize(100000).setScroll(new TimeValue(1000000))
                 .setSearchType(SearchType.SCAN).execute().actionGet();
@@ -149,7 +144,7 @@ public class EsUtils {
             while ((line = reader.readLine()) != null) {
                 JSONObject blockJson = JSON.parseObject(line);
                 blockJson.put("data", new Date());
-                // 设置主键
+                // setId 是用来设置主键，hui_test_post为index, post_test为type
                 bulkRequestBlock.add(client.prepareIndex("hui_test_post", "post_test").setSource(blockJson).setId(blockJson.getString("POST_URN")));
                 if (count % 1000 == 0) {
                     batch++;

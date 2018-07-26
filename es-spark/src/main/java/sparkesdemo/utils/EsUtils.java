@@ -3,8 +3,6 @@ package sparkesdemo.utils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.ImmutableMap;
-import com.sdyc.hqu.campaign.kernel.entity.PostIndexBean;
-import com.sdyc.hqu.campaign.kernel.entity.UserIndexBean;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -36,6 +34,8 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import scala.Tuple2;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.net.InetAddress;
@@ -62,22 +62,41 @@ public class EsUtils implements Serializable {
      */
     public static final HashMap<String, String> ES_INDEX_TYPE_MAP = new HashMap<String, String>(3);
 
-
+    /**
+     * 静态代码块，主要是用来初始化，esindex。
+     */
     static {
-        ES_INDEX_TYPE_MAP.put("weibo_user", "hui_test_user/user_test");
-        ES_INDEX_TYPE_MAP.put("weibo_post", "hui_test_post/post_test");
+        // 获取classloader
+        ClassLoader classLoader = EsUtils.class.getClassLoader();
+        if (classLoader == null) {
+            classLoader = Thread.currentThread().getContextClassLoader();
+        }
+        InputStream inputStream = classLoader.getResourceAsStream("es.properties");
+        // 获取properties
+        Properties properties = new Properties();
+        try {
+            properties.load(inputStream);
+            String weibo_user = properties.getProperty("weibo_user");
+            String weibo_post = properties.getProperty("weibo_post");
+            // 初始化相关参数
+            ES_INDEX_TYPE_MAP.put("weibo_user", "hui_test_user/user_test");
+            ES_INDEX_TYPE_MAP.put("weibo_post", "hui_test_post/post_test");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
-     * spark write es conf
+     * build spark write es conf
      *
-     * @param conf    conf
+     * @param conf    hadoop conf
      * @param esId    es 主键
      * @param esIndex es index
      * @param esNodes es 集群节点
      * @return
      */
     public static Configuration buildWriteConf(Configuration conf, String esId, String esIndex, String esNodes) {
+        // 如果索引不存在，则自动创建
         conf.set("es.index.auto.create", "true");
         // 指定es index
         conf.set("es.resource", esIndex);
@@ -93,18 +112,20 @@ public class EsUtils implements Serializable {
     /**
      * spark write to es
      *
-     * @param list
-     * @param conf
+     * @param list 待写的内容
+     * @param conf spark es write conf
      */
     public static void sparkWriteEs(List list, Configuration conf, JavaSparkContext sc) {
-
+        // 将待写的内容换转为json string
         List<String> tempList = convertToJson(list);
+        // list 转换为 javaRDD
         JavaRDD<String> javaRDD = sc.parallelize(tempList);
         javaRDD.mapPartitionsToPair(new PairFlatMapFunction<Iterator<String>, NullWritable, MapWritable>() {
             @Override
             public Iterable<Tuple2<NullWritable, MapWritable>> call(Iterator<String> iterator) throws Exception {
                 LinkedList<Tuple2<NullWritable, MapWritable>> resList = new LinkedList<Tuple2<NullWritable, MapWritable>>();
                 while (iterator.hasNext()) {
+                    // spark write data to es 中特殊的数据格式：MapWritable
                     final MapWritable writableMap = new MapWritable();
                     try {
                         final String next = iterator.next();
@@ -129,62 +150,20 @@ public class EsUtils implements Serializable {
         }).saveAsNewAPIHadoopFile("", NullWritable.class, MapWritable.class, EsOutputFormat.class, conf);
     }
 
-
+    /**
+     * 将代写的文件内容转换为json string
+     *
+     * @param list
+     * @return
+     */
     public static List<String> convertToJson(List list) {
         ArrayList<String> resList = new ArrayList<String>();
+        final HashMap<String, Object> hashMap = new HashMap<String, Object>();
         for (Object o : list) {
-            final HashMap<String, Object> hashMap = new HashMap<String, Object>();
-            if (o instanceof UserIndexBean) {
-                final UserIndexBean doc = (UserIndexBean) o;
-                hashMap.put("USER_URN", doc.getUserUrn());
-                hashMap.put("USER_ID", doc.getUserId());
-                hashMap.put("SCREEN_NAME", doc.getScreenName());
-                hashMap.put("LOCATION", doc.getLocation());
-                hashMap.put("CNT_FOLLOWERS", doc.getCntFollowers());
-                hashMap.put("CNT_FOLLOWING", doc.getCntFollowing());
-                hashMap.put("CNT_POSTS", doc.getCntPosts());
-                hashMap.put("GENDER", doc.getGender());
-                hashMap.put("CNT_REPLIES", doc.getCntReplies());
-                hashMap.put("CNT_FRIENDS", doc.getCntFriends());
-                hashMap.put("CNT_FAVOURITES", doc.getCntFavourites());
-                hashMap.put("LEVEL_CODE", doc.getLevelCode());
-                hashMap.put("LOC_COUNTRY", doc.getLocCountry());
-                hashMap.put("LOC_PROVINCE", doc.getLocProvince());
-                hashMap.put("LOC_CITY", doc.getLocCity());
-                hashMap.put("ENTITY_SECTION_URN", doc.getEntitySectionUrn());
-                hashMap.put("SERVICE_TYPE_URN", doc.getServiceTypeURN());
-                hashMap.put("ACCOUNT_TYPE", doc.getAccountType());
-                hashMap.put("EXTENSION", doc.getExtension());
-                hashMap.put("PRO_IMAGEURL", doc.getProfileImageUrl());
-                hashMap.put("CNT_LIKES", doc.getCntLikes());
-                hashMap.put("BIRTHDAY", doc.getBirthday());
-                Date dwCreatedAtDate = doc.getDwCreatedAt() == null ? new Date() : doc.getDwCreatedAt();
-                hashMap.put("DW_UPDATED_AT", DateUtils.ES_DATE_FORMAT.get().format(dwCreatedAtDate));
-            } else if (o instanceof PostIndexBean) {
-                final PostIndexBean doc = (PostIndexBean) o;
-                hashMap.put("LOCATION", doc.getLocation());
-                hashMap.put("POST_URN", doc.getPostUrn());
-                hashMap.put("POST_ID", doc.getPostId());
-                hashMap.put("USER_URN", doc.getUserUrn());
-                hashMap.put("USER_ID", doc.getUserId());
-                hashMap.put("SCREEN_NAME", doc.getNickName());
-                hashMap.put("ENTITY_SECTION_URN", doc.getEntitySectionUrn());
-                hashMap.put("SERVICE_TYPE_URN", doc.getServiceTypeUrn());
-                hashMap.put("TITLE", doc.getTitle());
-                hashMap.put("POST_TYPE", doc.getPostType());
-                hashMap.put("ENTITY_SECTION_NAME", doc.getEntitySectionName());//COMBO_KEY
-                hashMap.put("COMBO_KEY", doc.getComboKey());
-                hashMap.put("CNT_FAVORITED", doc.getCntFavorited());
-                hashMap.put("CNT_FORWARDED", doc.getCntForwarded());
-                hashMap.put("CNT_REPLIED", doc.getCntReplied());
-                hashMap.put("EXTENSION", doc.getExtension());
-                hashMap.put("CREATED_AT", doc.getCreatedAt() == null ? new Date() : doc.getCreatedAt());  //发帖时间
-                hashMap.put("POST_CONTENT", doc.getContent());
-                Date dwCreatedAtDate = doc.getDwCreatedAt() == null ? new Date() : doc.getDwCreatedAt();
-                hashMap.put("DW_CREATED_AT", DateUtils.ES_DATE_FORMAT.get().format(dwCreatedAtDate));  //入库时间
-            }
-            resList.add(JSON.toJSONString(hashMap));
+            JSONObject object = (JSONObject) o;
+            hashMap.put("1", object.getString("1"));
         }
+        resList.add(JSON.toJSONString(hashMap));
         return resList;
     }
 
@@ -298,11 +277,16 @@ public class EsUtils implements Serializable {
      * @return
      */
     public static Configuration buildUpdateConf(Configuration conf, String esId, String esIndex, String esNodes) {
+        // 允许数据自动创建es index
         conf.set("es.index.auto.create", "true");
+        // 设置es index
         conf.set("es.resource", esIndex);
+        // 设置es id
         conf.set("es.mapping.id", esId);
+        // es的更新方式为upsert
         conf.set("es.write.operation", "upsert");
         conf.set("mapred.tip.id", "task_201807121733_0003_m_000005");
+        // es nnodes
         conf.set("es.nodes", esNodes);
         return conf;
     }
@@ -344,6 +328,14 @@ public class EsUtils implements Serializable {
         }).saveAsNewAPIHadoopFile("", NullWritable.class, MapWritable.class, EsOutputFormat.class, configuration);
     }
 
+    /**
+     * 根据某个点段从es中匹配数据
+     *
+     * @param conf     spark es query conf
+     * @param esIndexs es index
+     * @param esNodes  es nodes
+     * @return
+     */
     public static SparkConf buildCountDataFromEsByKey(SparkConf conf, String esIndexs, String esNodes) {
         SparkConf config = conf;
         //指定读取的索引名称
@@ -354,23 +346,43 @@ public class EsUtils implements Serializable {
         return config;
     }
 
-
+    /**
+     * 根据某个字段从es中查找数据，并统计es中的帖子数。
+     *
+     * @param conf    spark es conf
+     * @param esIndex es index
+     * @param esNodes es nodes
+     * @param keys    es 待查询字段的内容。
+     * @return
+     */
     public static HashMap<String, Long> countDataFromEsByKey(SparkConf conf, String esIndex, String esNodes, List<String> keys) {
+        // 构建spark es query conf
         SparkConf newConf = buildCountDataFromEsByKey(conf, esIndex, esNodes);
         JavaSparkContext javaSparkContext = new JavaSparkContext(newConf);
+        // 初始化spark sql.
         SQLContext sql = new SQLContext(javaSparkContext);
         sql.sql("CREATE TEMPORARY TABLE postTab USING org.elasticsearch.spark.sql OPTIONS (resource '" + esIndex + "')");
-
+        // 构建spark sql 查询语句
         HashMap<String, Long> resMap = new HashMap<String, Long>();
         for (String key : keys) {
+            // sql查询语句
             String tempsql = "select * from postTab where USER_ID = " + key;
+            // 查询获取的数据dataFrame
             DataFrame dataFrame = sql.sql(tempsql);
+            // dataFrame.count 用来进行统计
             resMap.put(key, dataFrame.count());
         }
         return resMap;
     }
 
-    public static Client getEsClient(String esName, String esHosts){
+    /**
+     * java es client 初始化
+     *
+     * @param esName  es集群的名字
+     * @param esHosts es hosts: 192.168.1.235:9300,192.168.1.237:9300,192.168.1.238:9300 （注意其实用逗号来分割）
+     * @return
+     */
+    public static Client getEsClient(String esName, String esHosts) {
         Client transportClient = null;
         Settings settings = Settings.builder().put("cluster.name", esName).build();
         TransportClient client = TransportClient.builder().settings(settings).build();
@@ -389,21 +401,29 @@ public class EsUtils implements Serializable {
         return transportClient;
     }
 
-
-    public static HashMap<String, Long> countDataFromEsByKey(List<String> keys, String esIndexs,Client client){
+    /**
+     * java es client query by key
+     *
+     * @param keys     待查询字段的内容
+     * @param esIndexs esindex
+     * @param client   java es client
+     * @return
+     */
+    public static HashMap<String, Long> countDataFromEsByKey(List<String> keys, String esIndexs, Client client) {
         String[] split = esIndexs.split("/");
         String esIndex = split[0];
         String esType = split[1];
         HashMap<String, Long> resMap = new HashMap<String, Long>();
         for (String key : keys) {
-            QueryBuilder queryBuilder = QueryBuilders.commonTermsQuery("USER_ID",key);
+            // 构建查询语句，指定查询字段
+            QueryBuilder queryBuilder = QueryBuilders.commonTermsQuery("USER_ID", key);
             SearchResponse response = client.prepareSearch(esIndex)
                     .setTypes(esType)
                     .setSearchType(SearchType.DFS_QUERY_AND_FETCH)
                     .setQuery(queryBuilder)
                     .execute()
                     .actionGet();
-            resMap.put(key,response.getHits().totalHits());
+            resMap.put(key, response.getHits().totalHits());
         }
         return resMap;
     }
