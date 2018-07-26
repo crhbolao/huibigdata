@@ -19,6 +19,7 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Date;
+import java.util.Properties;
 
 /**
  * Created with IntelliJ IDEA.
@@ -36,14 +37,56 @@ public class EsUtils {
     public static Client client;
 
     /**
+     * es 集群名字
+     */
+    public static String esName;
+
+    /**
+     * es 集群ip: 192.168.1.235,192.168.1.238,192.168.1.237
+     */
+    public static String esIp;
+
+    /**
+     * es 集群hosts: 192.168.1.235:9300,192.168.1.237:9300,192.168.1.238:9300
+     */
+    public static String esHosts;
+
+    /**
+     * es index
+     */
+    public static String esIndex;
+
+    /**
+     * es type
+     */
+    public static String esType;
+
+    /**
      * 构造器初始化 es client
      *
      * @param clusterName es 集群名字
      * @param esHosts     es hosts : 192.168.1.235:9300,192.168.1.237:9300,192.168.1.238:9300
      */
-    public EsUtils(String clusterName, String esHosts) {
-        Settings settings = Settings.builder().put("cluster.name", clusterName).build();
-        TransportClient client = TransportClient.builder().settings(settings).build();
+
+    static {
+        ClassLoader classLoader = EsUtils.class.getClassLoader();
+        if (classLoader == null) {
+            classLoader = Thread.currentThread().getContextClassLoader();
+        }
+        InputStream inputStream = classLoader.getResourceAsStream("es.properties");
+        Properties properties = new Properties();
+        try {
+            properties.load(inputStream);
+            esName = properties.getProperty("es.cluster.name");
+            esIp = properties.getProperty("es.ip");
+            esHosts = properties.getProperty("es.host");
+            esIndex = properties.getProperty("es.index");
+            esType = properties.getProperty("es.type");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Settings settings = Settings.builder().put("cluster.name", esName).build();
+        TransportClient tempClient = TransportClient.builder().settings(settings).build();
 
         // 初始化连接
         try {
@@ -51,25 +94,26 @@ public class EsUtils {
             for (String node : nodes) {
                 if (node.length() > 0) {
                     String[] hostPost = node.split(":");
-                    this.client = client.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(hostPost[0]), Integer.parseInt(hostPost[1])));
+                    client = tempClient.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(hostPost[0]), Integer.parseInt(hostPost[1])));
                 }
             }
             System.out.println("初始化连接完成！！！");
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
+
     }
 
     /**
      * es 根据某个字段查询数据
      */
-    public void queryData() {
+    public static void queryData() {
         // 构建查询语句:其中user_id为字段，2474310017为内容
         QueryBuilder queryBuilder = QueryBuilders.commonTermsQuery("USER_ID", "2474310017");
 
         // 获取响应： hui_test_post为es index. post_test为es type
-        SearchResponse response = client.prepareSearch("hui_test_post")
-                .setTypes("post_test")
+        SearchResponse response = client.prepareSearch(esIndex)
+                .setTypes(esType)
                 .setSearchType(SearchType.DFS_QUERY_AND_FETCH)
                 .setQuery(queryBuilder)
                 .execute()
@@ -92,10 +136,10 @@ public class EsUtils {
     /**
      * 用来下载es中的数据
      */
-    public void downloadData() {
+    public static void downloadData() {
         //其中hui_test_post为es index . post_test为es type.
         // 使用scroll可以模拟一个传统数据的游标，记录当前读取的文档信息位置。
-        SearchResponse response = client.prepareSearch("hui_test_post").setTypes("post_test")
+        SearchResponse response = client.prepareSearch(esIndex).setTypes(esType)
                 .setQuery(QueryBuilders.matchAllQuery()).setSize(100000).setScroll(new TimeValue(1000000))
                 .setSearchType(SearchType.SCAN).execute().actionGet();
         String scrollid = response.getScrollId();
@@ -130,7 +174,7 @@ public class EsUtils {
      * @param sourcePath
      * @return
      */
-    public boolean importDataToEs(String sourcePath) {
+    public static boolean importDataToEs(String sourcePath) {
         try {
             BufferedReader reader = new BufferedReader(new FileReader(sourcePath));
             // 初始化数据计数
@@ -145,7 +189,7 @@ public class EsUtils {
                 JSONObject blockJson = JSON.parseObject(line);
                 blockJson.put("data", new Date());
                 // setId 是用来设置主键，hui_test_post为index, post_test为type
-                bulkRequestBlock.add(client.prepareIndex("hui_test_post", "post_test").setSource(blockJson).setId(blockJson.getString("POST_URN")));
+                bulkRequestBlock.add(client.prepareIndex(esIndex, esType).setSource(blockJson).setId(blockJson.getString("POST_URN")));
                 if (count % 1000 == 0) {
                     batch++;
                     bulkRequestBlock.execute().actionGet();
@@ -170,8 +214,7 @@ public class EsUtils {
         String clusterName = "sd-es-2.3.3";
         String hosts = "192.168.1.235:9300,192.168.1.237:9300,192.168.1.238:9300";
         String filePath = "C:\\Users\\sssd\\Desktop\\newes.txt";
-        EsUtils testes = new EsUtils(clusterName, hosts);
-        testes.importDataToEs(filePath);
+        EsUtils.importDataToEs(filePath);
 //        testes.downData();
     }
 }

@@ -427,4 +427,14 @@ public class EsUtils implements Serializable {
         }
         return resMap;
     }
+
+    public static void printStr(){
+        System.out.println("welcome to use esutils!");
+        System.out.println(ES_INDEX_TYPE_MAP.toString());
+    }
+
+    public static void main(String[] args) {
+        EsUtils.printStr();
+    }
+
 }
