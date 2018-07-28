@@ -1,1 +1,1 @@
-1， java client 将本地文件导入到es 中
+1， java client es 的相关操作
