@@ -5,6 +5,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import hdfs.java.entity.FileInfo;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -86,18 +87,19 @@ public class HdfsUtils {
                 fileInfo.setFileSize(totalSize);
                 inputStream.close();
                 outputStream.close();
-                return fileInfo;
             }
+            return fileInfo;
         } catch (Exception e) {
             e.printStackTrace();
         }
         return fileInfo;
     }
 
+
     public static void main(String[] args) {
         String sourcePath = "C:\\Users\\sssd\\Desktop\\testzip.zip";
-        String hdfsPath = "hdfs://user/test1";
-        HdfsUtils.unZipToHdfs(sourcePath,hdfsPath);
+        String hdfsPath = "hdfs://new1data/user/test1";
+        HdfsUtils.unZipToHdfs(sourcePath, hdfsPath);
     }
 
 }
