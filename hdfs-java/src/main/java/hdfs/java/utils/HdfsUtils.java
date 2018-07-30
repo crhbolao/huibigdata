@@ -1,15 +1,11 @@
 package hdfs.java.utils;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.*;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import hdfs.java.entity.FileInfo;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -83,11 +79,11 @@ public class HdfsUtils {
                 outputStream = fs.create(filePath, true);
                 IOUtils.copy(inputStream, outputStream);
                 outputStream.flush();
-                fileInfo.setFileNum(fileNum);
-                fileInfo.setFileSize(totalSize);
                 inputStream.close();
                 outputStream.close();
             }
+            fileInfo.setFileNum(fileNum);
+            fileInfo.setFileSize(totalSize);
             return fileInfo;
         } catch (Exception e) {
             e.printStackTrace();
@@ -95,11 +91,93 @@ public class HdfsUtils {
         return fileInfo;
     }
 
-
-    public static void main(String[] args) {
-        String sourcePath = "C:\\Users\\sssd\\Desktop\\testzip.zip";
-        String hdfsPath = "hdfs://new1data/user/test1";
-        HdfsUtils.unZipToHdfs(sourcePath, hdfsPath);
+    /**
+     * 从hdfs上下载数据到本地
+     *
+     * @param hdfsPath hdfs上的文件
+     * @param savapath 本地的文件
+     */
+    public static void fileReadFromHdfs(String hdfsPath, String savapath) {
+        try {
+            FileStatus[] fileStatuses = fs.listStatus(new Path(hdfsPath));
+            for (FileStatus status : fileStatuses) {
+                if (status.isDirectory()) {
+                    String tempPath = status.getPath().toString();
+                    String dirName = status.getPath().getName();
+                    File file = new File(savapath, dirName);
+                    if (!file.mkdir()) {
+                        System.out.println("本地创建文件目录失败！");
+                        break;
+                    }
+                    fileReadFromHdfs(tempPath, file.getPath());
+                } else if (status.isFile()) {
+                    FSDataInputStream inputStream = fs.open(status.getPath());
+                    File file = new File(savapath, status.getPath().getName());
+                    FileOutputStream outputStream = new FileOutputStream(file);
+                    byte[] ioBuffer = new byte[1024];
+                    int readNum = inputStream.read(ioBuffer);
+                    while (readNum != -1) {
+                        outputStream.write(ioBuffer, 0, readNum);
+                        readNum = inputStream.read(ioBuffer);
+                    }
+                    inputStream.close();
+                    outputStream.close();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
+    /**
+     * 上传本地文件到hdfs
+     *
+     * @param localpath 本地待保存文件
+     * @param hdfspath  hdfs上的文件保存路径
+     */
+    public static void pushFile2Hdfs(String localpath, String hdfspath) {
+        File file = new File(localpath);
+        File[] files = file.listFiles();
+        try {
+            for (File tempFile : files) {
+                if (tempFile.isDirectory()) {
+                    String dirName = tempFile.getName();
+                    Path path = new Path(hdfspath, dirName);
+                    if (!fs.exists(path) && !fs.mkdirs(path)) {
+                        System.out.println("该目录不存在且不能创建对应的文件目录！");
+                    }
+                    pushFile2Hdfs(tempFile.getPath(), path.toString());
+                } else if (tempFile.isFile()) {
+                    FileInputStream inputStream = new FileInputStream(tempFile);
+                    Path path = new Path(hdfspath, tempFile.getName());
+                    FSDataOutputStream outputStream = fs.create(path, true);
+                    IOUtils.copy(inputStream, outputStream);
+                    outputStream.flush();
+                    outputStream.close();
+                    inputStream.close();
+                } else {
+                    System.out.println("未知的文件类型！");
+                    continue;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public static void main(String[] args) {
+/*        String sourcePath = "C:\\Users\\sssd\\Desktop\\testzip.zip";
+        String hdfsPath = "hdfs://new1data/user/test1";
+        HdfsUtils.unZipToHdfs(sourcePath, hdfsPath);*/
+
+
+/*        String hdfspath = "hdfs://new1data/user/test1/testzip";
+        String savapath = "C:\\Users\\sssd\\Desktop\\testzip";
+        HdfsUtils.fileReadFromHdfs(hdfspath, savapath);*/
+
+        String localPath = "C:\\Users\\sssd\\Desktop\\testzip";
+        String hdfsPath = "hdfs://new1data/user/sssd";
+        HdfsUtils.pushFile2Hdfs(localPath, hdfsPath);
+    }
 }
