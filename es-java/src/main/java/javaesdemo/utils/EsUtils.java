@@ -215,6 +215,6 @@ public class EsUtils {
         String hosts = "192.168.1.235:9300,192.168.1.237:9300,192.168.1.238:9300";
         String filePath = "C:\\Users\\sssd\\Desktop\\newes.txt";
         EsUtils.importDataToEs(filePath);
-//        testes.downData();
+//        EsUtils.downloadData();
     }
 }
