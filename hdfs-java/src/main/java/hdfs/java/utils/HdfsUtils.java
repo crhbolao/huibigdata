@@ -176,8 +176,8 @@ public class HdfsUtils {
         String savapath = "C:\\Users\\sssd\\Desktop\\testzip";
         HdfsUtils.fileReadFromHdfs(hdfspath, savapath);*/
 
-        String localPath = "C:\\Users\\sssd\\Desktop\\testzip";
+/*        String localPath = "C:\\Users\\sssd\\Desktop\\testzip";
         String hdfsPath = "hdfs://new1data/user/sssd";
-        HdfsUtils.pushFile2Hdfs(localPath, hdfsPath);
+        HdfsUtils.pushFile2Hdfs(localPath, hdfsPath);*/
     }
 }
