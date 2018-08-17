@@ -12,6 +12,7 @@
         <module>es-java</module>
         <module>es-spark</module>
         <module>hdfs-java</module>
+        <module>katta-spark</module>
     </modules>
 
     <properties>
@@ -33,6 +34,31 @@
     </properties>
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-core_2.10</artifactId>
+            <version>${spark.version}</version>
+            <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-client</artifactId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>jets3t</artifactId>
+                    <groupId>net.java.dev.jets3t</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>tachyon</artifactId>
+                    <groupId>org.tachyonproject</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>chill_2.10</artifactId>
+                    <groupId>com.twitter</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 
         <!-- hadoop lib start -->
 
