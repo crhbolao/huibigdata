@@ -56,17 +56,17 @@ public class ReadDataFromKatta implements Serializable {
         SparkConf sparkConf = new SparkConf();
         sparkConf.setMaster("local[*]").setAppName("readDataFromKatta");
         JavaSparkContext sparkContext = new JavaSparkContext(sparkConf);
-        String batchId = "2135e967a1e74f7ab5b8e748a43733ff";
-        String nodeId = "34480";
+        String batchId = "16e39f4d17484f7db2c3230d795ccc33";
+        String nodeId = "34380";
 
         //构建 katta 查询的数据表和对应的查询语句
         Hashtable<String, SolrQuery> solrQuerytable = new Hashtable<String, SolrQuery>();
         SolrQuery solrQuery = new SolrQuery();
-//        solrQuery.addFilterQuery("META:" + nodeId + "_Y");
-        solrQuery.addFilterQuery("*:*");
+        solrQuery.addFilterQuery("META:" + nodeId + "_Y");
+//        solrQuery.addFilterQuery("*:*");
         solrQuerytable.put(batchId, solrQuery);
 
-            JdkSerializer jdkSerializer = new JdkSerializer();
+        JdkSerializer jdkSerializer = new JdkSerializer();
         JavaPairRDD<Object, SolrDocument> jpr = null;
         for (Map.Entry<String, SolrQuery> entry : solrQuerytable.entrySet()) {
             String tempBatchId = entry.getKey();
@@ -92,7 +92,11 @@ public class ReadDataFromKatta implements Serializable {
                     long locProvince = flowData.getLocProvince();
                     long locCity = flowData.getLocCity();
                     long locCountry = flowData.getLocCountry();
-                    resList.add(flowData.toString());
+                    if (flowData.getPostUrn().equalsIgnoreCase("195861-4264039545093830")) {
+                        System.out.println("solr中的数据为：" + solrDocument.getFieldValue("META").toString());
+                        FlowData flowData2 = DocConvert.kattaSolrDoc2FlowData(solrDocument);
+                        resList.add("flowData的数据为：" + flowData.toString());
+                    }
                 }
                 return resList;
             }
