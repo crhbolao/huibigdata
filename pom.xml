@@ -7,13 +7,14 @@
     <groupId>com.hui</groupId>
     <artifactId>huibigdata</artifactId>
     <packaging>pom</packaging>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
     <modules>
         <module>es-java</module>
         <module>es-spark</module>
         <module>hdfs-java</module>
         <module>katta-spark</module>
         <module>mongo-java</module>
+        <module>dubbo-java</module>
     </modules>
 
     <properties>
