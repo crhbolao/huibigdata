@@ -9,7 +9,7 @@ import java.text.SimpleDateFormat;
  * Date: 2018/7/14 13:46
  * Version: V1.0
  * To change this template use File | Settings | File Templates.
- * Description:   关于时间的工具类
+ * Description:   用来转换es中特殊时间格式的工具类
  */
 public class DateUtils {
 
