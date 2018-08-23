@@ -3,13 +3,15 @@ package mongo.java;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.mongodb.DBObject;
+import com.mongodb.*;
+import mongo.utils.ProperUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -49,10 +51,35 @@ public class ReadDataFromMongo {
         System.out.println("总共有" + i + "条数据！");
     }
 
+    /**
+     * mongo js mapreduce 统计
+     */
+    public void mongoCount() {
+
+        String now = Long.toString(new Date().getTime());
+        String pleasedTime = "300";
+        String wifiMac = "'c8eea6290c0b'";
+        // 其中的String.format是拼接字符串，相当于将对应的参数赋值到对应的map内容中%s。
+        String map = String.format(ProperUtils.getString("countCurrDayMap"), wifiMac, now, 600, pleasedTime);
+        String reduce = ProperUtils.getString("countCurrDayReduce");
+
+        String collectionName = "currDay1";
+        DBCollection collection = mongoTemplate.getCollection(collectionName);
+        MapReduceOutput output = collection.mapReduce(map, reduce, null, MapReduceCommand.OutputType.INLINE, new BasicDBObject());
+        Iterable<DBObject> results = output.results();
+        for (DBObject result : results) {
+            // 其中result中“_id”为主键，“value”为mapreduce统计的结果内容。
+            String id = result.get("_id").toString();
+            DBObject values = (DBObject) result.get("value");
+            System.out.println("主键为：" + id + "对应的内容为：" + values.toString());
+        }
+    }
+
     public static void main(String[] args) {
         ClassPathXmlApplicationContext classPathXmlApplicationContext = new ClassPathXmlApplicationContext("applicationContext.xml");
         MongoTemplate mongoTemplate = (MongoTemplate) classPathXmlApplicationContext.getBean("mongoTemplate");
         ReadDataFromMongo mongo = new ReadDataFromMongo(mongoTemplate);
-        mongo.LoadDataFromMongo();
+//        mongo.LoadDataFromMongo();
+        mongo.mongoCount();
     }
 }

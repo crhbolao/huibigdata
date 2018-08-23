@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+
+    <entry key="countCurrDayMap">
+        <![CDATA[
+           function(){
+                var date = this.date;
+                var data = this.data;
+                var mac = %s;
+                if(date != null && data != null && data.length > 1){
+                    var now = %s;
+                    var currCount = 0;
+                    var currNewCount = 0;
+                    var pleasedCount = 0;
+                    var currTime = %s;
+                    var pleasedTime = %s;
+                    var total = 0;
+
+                    for( var i=0; i<data.length; i++){
+                        if(data[i].wifiMac == mac){
+                            total = 1;
+                        }
+                    }
+
+                    <!--//统计当前人数和当前新增人数-->
+                    if((now/1000 - data[data.length - 1].updatedAt/1000 <  currTime) && total ==1){
+                        currCount = 1;
+                        if(data[data.length - 1].isNew == 1) {
+                            currNewCount = 1
+                        }
+                    }
+
+                    //统计停留时间和满意人数
+                    var oneVisitTime = (data[data.length - 1].updatedAt/1000 - data[0].updatedAt/1000);
+                    if((oneVisitTime > pleasedTime) && total ==1) {
+                        pleasedCount = 1
+                    }
+
+                    //currDayTotal:当天客流量 currCount:当前人数 currNewCount:当前新增人数 pleased:满意人数 visitTime:参观停留时间
+                    emit(date,{currDayTotal:total,curr:currCount,currNew:currNewCount,pleased:pleasedCount,visitTime:oneVisitTime})
+                }
+            };
+        ]]>
+    </entry>
+
+    <entry key="countCurrDayReduce">
+        <![CDATA[
+            function(date, values){
+                var res={currDayTotal:0,curr:0,currNew:0,pleased:0,visitTime:0};
+                values.forEach(function(val) {
+                    res.currDayTotal += val.currDayTotal;
+                    res.curr += val.curr;
+                    res.currNew += val.currNew;
+                    res.pleased += val.pleased;
+                    res.visitTime += val.visitTime;
+                });
+                return res
+            }
+        ]]>
+    </entry>
+
+</properties>
