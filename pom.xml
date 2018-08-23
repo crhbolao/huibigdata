@@ -16,6 +16,7 @@
         <module>mongo-java</module>
         <module>dubbo-java</module>
         <module>mongo-spark</module>
+        <module>common-java</module>
     </modules>
 
     <properties>
