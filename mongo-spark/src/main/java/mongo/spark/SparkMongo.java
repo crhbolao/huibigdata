@@ -51,7 +51,7 @@ public class SparkMongo implements Serializable {
     }
 
     /**
-     * 用来读取mongo中的数据
+     *  用来读取mongo的数据
      */
     public void readDataFromMongo(){
         // 从mongolists 中 获取 mongo 数据表
@@ -87,7 +87,6 @@ public class SparkMongo implements Serializable {
         }
 
     }
-
 
     public Configuration getConf() {
         return conf;
