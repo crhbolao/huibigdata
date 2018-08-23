@@ -56,7 +56,7 @@ public class ReadDataFromKatta implements Serializable {
         SparkConf sparkConf = new SparkConf();
         sparkConf.setMaster("local[*]").setAppName("readDataFromKatta");
         JavaSparkContext sparkContext = new JavaSparkContext(sparkConf);
-        String batchId = "16e39f4d17484f7db2c3230d795ccc33";
+        String batchId = "6a5441622f994e5e85243de361fd6ed2";
         String nodeId = "34380";
 
         //构建 katta 查询的数据表和对应的查询语句

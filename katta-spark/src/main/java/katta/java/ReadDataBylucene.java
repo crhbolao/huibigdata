@@ -22,13 +22,17 @@ public class ReadDataBylucene {
     private final LuceneClient luceneClient = new LuceneClient(new ZkConfiguration());
 
     public void LoadDataBylucene() throws Exception {
-        String batchId = "61149fa959794a2eb2175002e4e32d88";
+        String batchId = "ffa8b6addf064a53ab7cdaa45222db6c";
         SolrQuery sq = new SolrQuery("*:*");
         List<SolrDocument> documentList = luceneClient.query(sq, new String[]{batchId}).getDocs();
         for (SolrDocument solrDocument : documentList) {
             FlowData flowData = DocConvert.kattaSolrDoc2FlowData(solrDocument);
             System.out.println(flowData.toString());
         }
+    }
+
+    public void testTemp(){
+
     }
 
     public static void main(String[] args) throws Exception{
