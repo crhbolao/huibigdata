@@ -1,4 +1,4 @@
-package mongo;
+package mongo.java;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;

@@ -15,6 +15,7 @@
         <module>katta-spark</module>
         <module>mongo-java</module>
         <module>dubbo-java</module>
+        <module>mongo-spark</module>
     </modules>
 
     <properties>
@@ -36,6 +37,13 @@
     </properties>
 
     <dependencies>
+
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.1.39</version>
+            <optional>true</optional>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
