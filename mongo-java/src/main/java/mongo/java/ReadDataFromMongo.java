@@ -12,6 +12,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -31,24 +32,33 @@ public class ReadDataFromMongo {
         this.mongoTemplate = mongoTemplate;
     }
 
+    /**
+     * 从 mongo 中加载数据
+     */
     public void LoadDataFromMongo() {
         Query query = new Query();
         query.with(new Sort(new Sort.Order(Sort.Direction.DESC, "dwCreatedAt")));
-        List<DBObject> mongoDatas = mongoTemplate.find(query, DBObject.class, "currDay2");
+        List<DBObject> mongoDatas = mongoTemplate.find(query, DBObject.class, "currDay1");
         int i = 0;
         for (DBObject dbObject : mongoDatas) {
             JSONObject parse = (JSONObject) JSON.parse(dbObject.toString());
             JSONArray data = parse.getJSONArray("data");
-            for (Object datum : data) {
-                JSONObject datum1 = (JSONObject) datum;
-                if (StringUtils.equalsIgnoreCase(datum1.getString("wifiMac"), "c8eea6290c0b")) {
-                    System.out.println(parse);
-                    i++;
-                    break;
+            HashSet<String> set = new HashSet<String>();
+            for (Object o : data) {
+                JSONObject object = (JSONObject) o;
+                String wifiMac = object.getString("wifiMac");
+                set.add(wifiMac);
+            }
+            if (set.size() > 1) {
+                for (Object o : data) {
+                    JSONObject object = (JSONObject) o;
+                    String wifiMac = object.getString("wifiMac");
+                    if (StringUtils.equalsIgnoreCase(wifiMac,"c8eea6290c0b") ){
+                        System.out.println(parse);
+                    }
                 }
             }
         }
-        System.out.println("总共有" + i + "条数据！");
     }
 
     /**
@@ -79,7 +89,7 @@ public class ReadDataFromMongo {
         ClassPathXmlApplicationContext classPathXmlApplicationContext = new ClassPathXmlApplicationContext("applicationContext.xml");
         MongoTemplate mongoTemplate = (MongoTemplate) classPathXmlApplicationContext.getBean("mongoTemplate");
         ReadDataFromMongo mongo = new ReadDataFromMongo(mongoTemplate);
-//        mongo.LoadDataFromMongo();
-        mongo.mongoCount();
+        mongo.LoadDataFromMongo();
+//        mongo.mongoCount();
     }
 }
