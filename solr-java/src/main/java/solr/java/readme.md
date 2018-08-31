@@ -1,0 +1,1 @@
+# 1,主要是用来测试 solrj 中 solrserver 提交。

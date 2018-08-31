@@ -15,7 +15,7 @@ import java.util.LinkedList;
  * Date: 2018/8/31 15:27
  * Version: V1.0
  * To change this template use File | Settings | File Templates.
- * Description:  主要是用来测试 solr 数据的提交
+ * Description:  使用solr提供的注解机制,说明: @Field无参数时,匹配当前字段,也可以自定义,字段必须在schema.xml中的Filed中存在.
  */
 public class SolrUtils {
 
