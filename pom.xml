@@ -17,6 +17,8 @@
         <module>dubbo-java</module>
         <module>mongo-spark</module>
         <module>common-java</module>
+        <module>compain-work</module>
+        <module>solr-java</module>
     </modules>
 
     <properties>
@@ -35,9 +37,11 @@
         <hadoop.version>2.6.5</hadoop.version>
         <hive.version>1.2.2</hive.version>
         <zookeeper.version>3.4.5</zookeeper.version>
+        <httpclient.version>4.3.1</httpclient.version>
     </properties>
 
     <dependencies>
+
 
         <dependency>
             <groupId>com.alibaba</groupId>
