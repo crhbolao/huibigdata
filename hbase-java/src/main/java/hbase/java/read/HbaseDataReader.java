@@ -1,4 +1,4 @@
-package hbase.java.demo;
+package hbase.java.read;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -28,7 +28,9 @@ public class HbaseDataReader {
 
     private Configuration conf;
 
-
+    /**
+     * 初始化构造器
+     */
     public HbaseDataReader() {
         conf = HBaseConfiguration.create();
         conf.set("hbase.master", "192.168.1.239:60000");

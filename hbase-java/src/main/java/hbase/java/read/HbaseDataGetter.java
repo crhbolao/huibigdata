@@ -1,4 +1,4 @@
-package hbase.java.demo;
+package hbase.java.read;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.Get;
