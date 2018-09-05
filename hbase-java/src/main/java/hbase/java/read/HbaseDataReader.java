@@ -26,6 +26,9 @@ public class HbaseDataReader {
      */
     private static ExecutorService pool = Executors.newFixedThreadPool(10);
 
+    /**
+     * hbase配置文件
+     */
     private Configuration conf;
 
     /**
@@ -33,7 +36,9 @@ public class HbaseDataReader {
      */
     public HbaseDataReader() {
         conf = HBaseConfiguration.create();
+        // 配置hbase主节点
         conf.set("hbase.master", "192.168.1.239:60000");
+        // 配置hbase zookeeper 集群的节点
         conf.set("hbase.zookeeper.quorum", "nowledgedata-n238:2181,nowledgedata-n239:2181,nowledgedata-n240:2181");
     }
 
@@ -47,24 +52,32 @@ public class HbaseDataReader {
      * @return
      */
     public ArrayList<Result> readDataFromHbase(List<String> rowKeys, List<String> filterColumn, String tableName, String columnFamilyName) {
+        // 如果hbase的rowkey为空，则直接返回null
         if (rowKeys == null || rowKeys.size() <= 0) {
             return null;
         }
+        // 初始化每批次查询rowkey的大小
         final int maxRowKeySize = 1000;
         // 如果可以被整除，说明是1000的倍数，其对应的loopsize便是1000的倍数，如果不能被整除，需要在其的倍数加1.
         int loopSize = rowKeys.size() % maxRowKeySize == 0 ? rowKeys.size() / maxRowKeySize : rowKeys.size() / maxRowKeySize + 1;
+        // 初始化从hbase查询出的结果
         ArrayList<Future<List<Result>>> results = new ArrayList<Future<List<Result>>>();
+        // 批次循环
         for (int loop = 0; loop < loopSize; loop++) {
-            // 用来获取 最末端的 rowkey
-            int rowKeyEnd = (loop + 1) * maxRowKeySize > rowKeys.size() ? rowKeys.size() : (loop + 1) * maxRowKeySize;
+            // 用来获取最开始的rowkey
             int rowkeyStart = loop * maxRowKeySize;
+            // 用来获取最末端的rowkey
+            int rowKeyEnd = (loop + 1) * maxRowKeySize > rowKeys.size() ? rowKeys.size() : (loop + 1) * maxRowKeySize;
+            // 截取本批次需要查找的rowkey
             List<String> partRowKeys = rowKeys.subList(rowkeyStart, rowKeyEnd);
+            // 初始化hbase查询数据的线程。
             HbaseDataGetter hbaseDataGetter = new HbaseDataGetter(partRowKeys, filterColumn, tableName, columnFamilyName, conf);
             synchronized (pool) {
                 Future<List<Result>> submit = pool.submit(hbaseDataGetter);
                 results.add(submit);
             }
         }
+        // 重新整合查询出的数据
         ArrayList<Result> finalyRes = new ArrayList<Result>();
         try {
             for (Future<List<Result>> result : results) {
