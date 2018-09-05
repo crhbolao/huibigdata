@@ -20,6 +20,7 @@
         <module>compain-work</module>
         <module>solr-java</module>
         <module>spring-dingshi</module>
+        <module>hbase-java</module>
     </modules>
 
     <properties>

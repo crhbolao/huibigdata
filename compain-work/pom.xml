@@ -9,11 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>mongo-java</artifactId>
-    <packaging>pom</packaging>
-    <modules>
-        <module>solr-java</module>
-    </modules>
+    <artifactId>compain-work</artifactId>
 
     <dependencies>
 
@@ -32,8 +28,9 @@
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
-            <version>2.11.0</version>
+            <version>3.4.2</version>
         </dependency>
+
     </dependencies>
 
 </project>

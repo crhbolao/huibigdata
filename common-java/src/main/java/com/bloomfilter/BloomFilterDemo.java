@@ -23,7 +23,7 @@ public class BloomFilterDemo {
     /**
      * 初始化 bloomFileter
      */
-    private static BloomFilter<Integer> bloomFilter = BloomFilter.create(Funnels.integerFunnel(), size,  0.0001);
+    private static BloomFilter<Integer> bloomFilter = BloomFilter.create(Funnels.integerFunnel(), size, 0.0001);
 
     /**
      * 表示遗漏的总数
@@ -35,21 +35,24 @@ public class BloomFilterDemo {
      */
     private static AtomicInteger errorCount = new AtomicInteger(0);
 
-    public void dataFilter(){
+    /**
+     * 用来进行数据过滤
+     */
+    public void dataFilter() {
 
-        for (int i = 0; i< size; i++){
+        for (int i = 0; i < size; i++) {
             bloomFilter.put(i);
         }
 
-        for (int i = 0; i < size; i++){
-            if (!bloomFilter.mightContain(i)){
+        for (int i = 0; i < size; i++) {
+            if (!bloomFilter.mightContain(i)) {
                 System.out.println("有坏人逃脱了！！！");
                 lostCount.getAndIncrement();
             }
         }
 
-        for (int i = size + 10000; i < size + 20000; i++){
-            if (bloomFilter.mightContain(i)){
+        for (int i = size + 10000; i < size + 20000; i++) {
+            if (bloomFilter.mightContain(i)) {
                 errorCount.getAndIncrement();
             }
         }
@@ -57,6 +60,14 @@ public class BloomFilterDemo {
         System.out.println("遗漏的数量为：" + lostCount.get());
         System.out.println("误判的数量为：" + errorCount.get());
 
+    }
+
+    /**
+     * 用来重置 filter
+     */
+    public void reSetFilter(){
+        BloomFilter<Integer> newFilter = BloomFilter.create(Funnels.integerFunnel(), size, 0.0001);
+        this.bloomFilter = newFilter;
     }
 
     public static void main(String[] args) {

@@ -62,41 +62,36 @@ public class EsUtils implements Serializable {
      */
     public static final HashMap<String, String> ES_INDEX_TYPE_MAP = new HashMap<String, String>(3);
 
-    /**
-     * 静态代码块，主要是用来初始化，esindex。
-     */
+
     static {
-        // 获取classloader
+
         ClassLoader classLoader = EsUtils.class.getClassLoader();
         if (classLoader == null) {
             classLoader = Thread.currentThread().getContextClassLoader();
         }
-        InputStream inputStream = classLoader.getResourceAsStream("es.properties");
-        // 获取properties
+        InputStream inputStream = classLoader.getResourceAsStream("conf.properties");
         Properties properties = new Properties();
         try {
             properties.load(inputStream);
             String weibo_user = properties.getProperty("weibo_user");
             String weibo_post = properties.getProperty("weibo_post");
-            // 初始化相关参数
-            ES_INDEX_TYPE_MAP.put("weibo_user", "hui_test_user/user_test");
-            ES_INDEX_TYPE_MAP.put("weibo_post", "hui_test_post/post_test");
+            ES_INDEX_TYPE_MAP.put("weibo_user", weibo_user);
+            ES_INDEX_TYPE_MAP.put("weibo_post", weibo_post);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     /**
-     * build spark write es conf
+     * spark write es conf
      *
-     * @param conf    hadoop conf
+     * @param conf    conf
      * @param esId    es 主键
      * @param esIndex es index
      * @param esNodes es 集群节点
      * @return
      */
     public static Configuration buildWriteConf(Configuration conf, String esId, String esIndex, String esNodes) {
-        // 如果索引不存在，则自动创建
         conf.set("es.index.auto.create", "true");
         // 指定es index
         conf.set("es.resource", esIndex);
@@ -112,20 +107,17 @@ public class EsUtils implements Serializable {
     /**
      * spark write to es
      *
-     * @param list 待写的内容
-     * @param conf spark es write conf
+     * @param list
+     * @param conf
      */
     public static void sparkWriteEs(List list, Configuration conf, JavaSparkContext sc) {
-        // 将待写的内容换转为json string
-        List<String> tempList = convertToJson(list);
-        // list 转换为 javaRDD
-        JavaRDD<String> javaRDD = sc.parallelize(tempList);
+
+        JavaRDD<String> javaRDD = sc.parallelize(list);
         javaRDD.mapPartitionsToPair(new PairFlatMapFunction<Iterator<String>, NullWritable, MapWritable>() {
             @Override
             public Iterable<Tuple2<NullWritable, MapWritable>> call(Iterator<String> iterator) throws Exception {
                 LinkedList<Tuple2<NullWritable, MapWritable>> resList = new LinkedList<Tuple2<NullWritable, MapWritable>>();
                 while (iterator.hasNext()) {
-                    // spark write data to es 中特殊的数据格式：MapWritable
                     final MapWritable writableMap = new MapWritable();
                     try {
                         final String next = iterator.next();
@@ -150,22 +142,7 @@ public class EsUtils implements Serializable {
         }).saveAsNewAPIHadoopFile("", NullWritable.class, MapWritable.class, EsOutputFormat.class, conf);
     }
 
-    /**
-     * 将代写的文件内容转换为json string
-     *
-     * @param list
-     * @return
-     */
-    public static List<String> convertToJson(List list) {
-        ArrayList<String> resList = new ArrayList<String>();
-        final HashMap<String, Object> hashMap = new HashMap<String, Object>();
-        for (Object o : list) {
-            JSONObject object = (JSONObject) o;
-            hashMap.put("1", object.getString("1"));
-        }
-        resList.add(JSON.toJSONString(hashMap));
-        return resList;
-    }
+
 
     /**
      * build es query conf（By time）
@@ -277,16 +254,11 @@ public class EsUtils implements Serializable {
      * @return
      */
     public static Configuration buildUpdateConf(Configuration conf, String esId, String esIndex, String esNodes) {
-        // 允许数据自动创建es index
         conf.set("es.index.auto.create", "true");
-        // 设置es index
         conf.set("es.resource", esIndex);
-        // 设置es id
         conf.set("es.mapping.id", esId);
-        // es的更新方式为upsert
         conf.set("es.write.operation", "upsert");
         conf.set("mapred.tip.id", "task_201807121733_0003_m_000005");
-        // es nnodes
         conf.set("es.nodes", esNodes);
         return conf;
     }
@@ -328,14 +300,6 @@ public class EsUtils implements Serializable {
         }).saveAsNewAPIHadoopFile("", NullWritable.class, MapWritable.class, EsOutputFormat.class, configuration);
     }
 
-    /**
-     * 根据某个点段从es中匹配数据
-     *
-     * @param conf     spark es query conf
-     * @param esIndexs es index
-     * @param esNodes  es nodes
-     * @return
-     */
     public static SparkConf buildCountDataFromEsByKey(SparkConf conf, String esIndexs, String esNodes) {
         SparkConf config = conf;
         //指定读取的索引名称
@@ -346,42 +310,22 @@ public class EsUtils implements Serializable {
         return config;
     }
 
-    /**
-     * 根据某个字段从es中查找数据，并统计es中的帖子数。
-     *
-     * @param conf    spark es conf
-     * @param esIndex es index
-     * @param esNodes es nodes
-     * @param keys    es 待查询字段的内容。
-     * @return
-     */
+
     public static HashMap<String, Long> countDataFromEsByKey(SparkConf conf, String esIndex, String esNodes, List<String> keys) {
-        // 构建spark es query conf
         SparkConf newConf = buildCountDataFromEsByKey(conf, esIndex, esNodes);
         JavaSparkContext javaSparkContext = new JavaSparkContext(newConf);
-        // 初始化spark sql.
         SQLContext sql = new SQLContext(javaSparkContext);
         sql.sql("CREATE TEMPORARY TABLE postTab USING org.elasticsearch.spark.sql OPTIONS (resource '" + esIndex + "')");
-        // 构建spark sql 查询语句
+
         HashMap<String, Long> resMap = new HashMap<String, Long>();
         for (String key : keys) {
-            // sql查询语句
             String tempsql = "select * from postTab where USER_ID = " + key;
-            // 查询获取的数据dataFrame
             DataFrame dataFrame = sql.sql(tempsql);
-            // dataFrame.count 用来进行统计
             resMap.put(key, dataFrame.count());
         }
         return resMap;
     }
 
-    /**
-     * java es client 初始化
-     *
-     * @param esName  es集群的名字
-     * @param esHosts es hosts: 192.168.1.235:9300,192.168.1.237:9300,192.168.1.238:9300 （注意其实用逗号来分割）
-     * @return
-     */
     public static Client getEsClient(String esName, String esHosts) {
         Client transportClient = null;
         Settings settings = Settings.builder().put("cluster.name", esName).build();
@@ -401,21 +345,13 @@ public class EsUtils implements Serializable {
         return transportClient;
     }
 
-    /**
-     * java es client query by key
-     *
-     * @param keys     待查询字段的内容
-     * @param esIndexs esindex
-     * @param client   java es client
-     * @return
-     */
+
     public static HashMap<String, Long> countDataFromEsByKey(List<String> keys, String esIndexs, Client client) {
         String[] split = esIndexs.split("/");
         String esIndex = split[0];
         String esType = split[1];
         HashMap<String, Long> resMap = new HashMap<String, Long>();
         for (String key : keys) {
-            // 构建查询语句，指定查询字段
             QueryBuilder queryBuilder = QueryBuilders.commonTermsQuery("USER_ID", key);
             SearchResponse response = client.prepareSearch(esIndex)
                     .setTypes(esType)
@@ -427,14 +363,4 @@ public class EsUtils implements Serializable {
         }
         return resMap;
     }
-
-    public static void printStr(){
-        System.out.println("welcome to use esutils!");
-        System.out.println(ES_INDEX_TYPE_MAP.toString());
-    }
-
-    public static void main(String[] args) {
-        EsUtils.printStr();
-    }
-
 }

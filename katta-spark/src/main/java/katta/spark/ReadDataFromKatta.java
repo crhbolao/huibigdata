@@ -92,7 +92,7 @@ public class ReadDataFromKatta implements Serializable {
                     long locProvince = flowData.getLocProvince();
                     long locCity = flowData.getLocCity();
                     long locCountry = flowData.getLocCountry();
-                    if (flowData.getPostUrn().equalsIgnoreCase("195861-4264039545093830")) {
+                    if (flowData.getPostUrn().equalsIgnoreCase("195861-4264022654702082")) {
                         System.out.println("solr中的数据为：" + solrDocument.getFieldValue("META").toString());
                         FlowData flowData2 = DocConvert.kattaSolrDoc2FlowData(solrDocument);
                         resList.add("flowData的数据为：" + flowData.toString());
