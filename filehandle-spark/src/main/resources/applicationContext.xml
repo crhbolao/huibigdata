@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx" xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+            http://www.springframework.org/schema/beans/spring-beans.xsd
+            http://www.springframework.org/schema/context
+            http://www.springframework.org/schema/context/spring-context.xsd
+            http://www.springframework.org/schema/aop
+            http://www.springframework.org/schema/aop/spring-aop.xsd
+            http://www.springframework.org/schema/tx
+            http://www.springframework.org/schema/tx/spring-tx.xsd
+            http://www.springframework.org/schema/task
+	        http://www.springframework.org/schema/task/spring-task.xsd
+            http://www.springframework.org/schema/context
+            http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+
+
+    <bean id="propertyConfigurer"
+          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath:conf.properties</value>
+            </list>
+        </property>
+    </bean>
+
+    <!-- map类型参数的定义  -->
+    <util:map id="params" key-type="java.lang.String" value-type="java.lang.String">
+        <entry key="HADOOP_CONF_DIR" value="${HADOOP_CONF_DIR}"/>
+        <entry key="YARN_CONF_DIR" value="${YARN_CONF_DIR}"/>
+        <entry key="SPARK_CONF_DIR" value="${SPARK_CONF_DIR}"/>
+        <entry key="SPARK_HOME" value="${SPARK_HOME}"/>
+        <entry key="JAVA_HOME" value="${JAVA_HOME}"/>
+        <entry key="appName" value="${appName}"/>
+        <entry key="master" value="${master}"/>
+        <entry key="spark.driver.memory" value="${spark.driver.memory}"/>
+        <entry key="spark.executor.memory" value="${spark.executor.memory}"/>
+        <entry key="spark.executor.cores" value="${spark.executor.cores}"/>
+        <entry key="appResource" value="${appResource}"/>
+        <entry key="mainClass" value="${mainClass}"/>
+        <entry key="appArgs" value="${appArgs}"/>
+        <entry key="deployMode" value="${deployMode}"/>
+    </util:map>
+
+
+<!--    &lt;!&ndash; 主要是实现 spring 的定时启动 &ndash;&gt;
+    <context:component-scan base-package="com.mongo"/>
+    <task:scheduled-tasks>
+        <task:scheduled ref="app" method="exture" cron="0 0 1 * * ?"/>
+    </task:scheduled-tasks>
+    <task:annotation-driven/>-->
+
+
+</beans>
