@@ -28,7 +28,7 @@
         <hibernate.version>4.1.7.Final</hibernate.version>
         <druid.version>1.1.5</druid.version>
         <slf4j.version>1.7.5</slf4j.version>
-        <spring.version>4.1.1.RELEASE</spring.version>
+        <spring.version>5.2.7.RELEASE</spring.version>
         <webapp.path>/</webapp.path>
         <webapp.port>8080</webapp.port>
         <webapp.stopPort>8090</webapp.stopPort>
